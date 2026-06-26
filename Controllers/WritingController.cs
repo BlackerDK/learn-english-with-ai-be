@@ -48,6 +48,24 @@ namespace backend.Controllers
             return Ok(request);
         }
 
+        [HttpPost("batch")]
+        public async Task<IActionResult> CreateTopicsBatch([FromBody] List<WritingTopic> requests)
+        {
+            if (requests == null || !requests.Any()) return BadRequest("No data provided");
+
+            foreach(var req in requests)
+            {
+                if (string.IsNullOrWhiteSpace(req.Title)) continue;
+                req.Id = Guid.NewGuid();
+                req.UserId = CurrentUserId;
+                req.CreatedAt = DateTime.UtcNow;
+                _context.WritingTopics.Add(req);
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok(new { count = requests.Count });
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTopic(Guid id, [FromBody] WritingTopic request)
         {
