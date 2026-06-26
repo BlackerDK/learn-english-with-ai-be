@@ -186,7 +186,7 @@ namespace backend.Controllers
             if (vocabulary == null) return NotFound();
 
             var rating = request.Rating.Trim().ToLower();
-            
+
             var validStatuses = new[] { "unknown", "hard", "good", "easy" };
             if (validStatuses.Contains(rating))
             {
@@ -422,7 +422,7 @@ namespace backend.Controllers
                         Example = colExample >= 0 ? row[colExample]?.ToString()?.Trim() ?? "" : "",
                         ExampleTranslation = colExTrans >= 0 ? row[colExTrans]?.ToString()?.Trim() ?? "" : "",
                         Tags = "Excel Import",
-                        Status = "New",
+                        Status = "unknown",
                         CreatedAt = DateTime.UtcNow,
                         NextReviewDate = DateTime.UtcNow,
                         SrsIntervalDays = 0
