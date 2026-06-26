@@ -1,13 +1,17 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Database;
 using backend.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class SettingsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,12 +21,21 @@ namespace backend.Controllers
             _context = context;
         }
 
+        private Guid GetUserId()
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdStr, out var userId))
+                return userId;
+            throw new UnauthorizedAccessException("Invalid user token.");
+        }
+
         // GET: api/settings/gemini-key
         [HttpGet("gemini-key")]
         public async Task<IActionResult> GetGeminiKeyStatus()
         {
+            var userId = GetUserId();
             var setting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey");
+                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey" && s.UserId == userId);
 
             if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
             {
@@ -46,13 +59,15 @@ namespace backend.Controllers
                 return BadRequest("API Key cannot be empty.");
             }
 
+            var userId = GetUserId();
             var setting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey");
+                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey" && s.UserId == userId);
 
             if (setting == null)
             {
                 setting = new SystemSetting
                 {
+                    UserId = userId,
                     Key = "GeminiApiKey",
                     Value = request.Key.Trim()
                 };
@@ -71,8 +86,9 @@ namespace backend.Controllers
         [HttpGet("groq-key")]
         public async Task<IActionResult> GetGroqKeyStatus()
         {
+            var userId = GetUserId();
             var setting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GroqApiKey");
+                .FirstOrDefaultAsync(s => s.Key == "GroqApiKey" && s.UserId == userId);
 
             if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
             {
@@ -96,13 +112,15 @@ namespace backend.Controllers
                 return BadRequest("API Key cannot be empty.");
             }
 
+            var userId = GetUserId();
             var setting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GroqApiKey");
+                .FirstOrDefaultAsync(s => s.Key == "GroqApiKey" && s.UserId == userId);
 
             if (setting == null)
             {
                 setting = new SystemSetting
                 {
+                    UserId = userId,
                     Key = "GroqApiKey",
                     Value = request.Key.Trim()
                 };

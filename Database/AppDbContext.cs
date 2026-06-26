@@ -32,7 +32,10 @@ namespace backend.Database
             modelBuilder.Entity<Vocabulary>()
                 .HasIndex(v => v.NextReviewDate);
 
-            // Configure SystemSetting default values if needed
+            // Configure SystemSetting
+            modelBuilder.Entity<SystemSetting>()
+                .HasIndex(s => new { s.UserId, s.Key })
+                .IsUnique();
         }
     }
 }

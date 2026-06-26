@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using backend.Database;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace backend.Services
 {
@@ -15,19 +17,27 @@ namespace backend.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _dbContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public GeminiService(HttpClient httpClient, IConfiguration configuration, AppDbContext dbContext)
+        public GeminiService(HttpClient httpClient, IConfiguration configuration, AppDbContext dbContext, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _dbContext = dbContext;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         private async Task<string> GetApiKeyAsync()
         {
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+            {
+                throw new InvalidOperationException("User is not authenticated. Cannot fetch API Key.");
+            }
+
             // 1. Try reading from Database
             var dbSetting = await _dbContext.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey");
+                .FirstOrDefaultAsync(s => s.Key == "GeminiApiKey" && s.UserId == userId);
             if (dbSetting != null && !string.IsNullOrWhiteSpace(dbSetting.Value))
             {
                 return dbSetting.Value;
@@ -53,11 +63,15 @@ namespace backend.Services
         // GROQ API FALLBACK BACKEND
         private async Task<string?> GetGroqApiKeyAsync()
         {
-            var dbSetting = await _dbContext.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == "GroqApiKey");
-            if (dbSetting != null && !string.IsNullOrWhiteSpace(dbSetting.Value))
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (Guid.TryParse(userIdStr, out var userId))
             {
-                return dbSetting.Value;
+                var dbSetting = await _dbContext.SystemSettings
+                    .FirstOrDefaultAsync(s => s.Key == "GroqApiKey" && s.UserId == userId);
+                if (dbSetting != null && !string.IsNullOrWhiteSpace(dbSetting.Value))
+                {
+                    return dbSetting.Value;
+                }
             }
 
             var envKey = Environment.GetEnvironmentVariable("GROQ_API_KEY");

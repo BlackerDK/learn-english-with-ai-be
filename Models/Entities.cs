@@ -134,6 +134,12 @@ namespace backend.Models
     public class SystemSetting
     {
         [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public Guid UserId { get; set; }
+
+        [Required]
         public string Key { get; set; } = string.Empty;
 
         [Required]

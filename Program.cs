@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Register HttpClient and GeminiService
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<GeminiService>();
 
 // JWT Authentication
