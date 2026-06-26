@@ -14,7 +14,8 @@ builder.Services.AddControllers();
 // Register DbContext with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString)
+           .UseLowerCaseNamingConvention());
 
 // Register HttpClient and GeminiService
 builder.Services.AddHttpContextAccessor();
